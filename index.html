@@ -523,7 +523,7 @@ class ProductGrid {
             // IMPORTANT: The targetOrigin MUST be your Pixpa domain
             window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
         } else {
-            console.error('GitHub Page: productsContainer not found for height calculation.');
+            console.error('GitHub Page: gifts-for-menopauseContainer not found for height calculation.');
         }
     }
 
@@ -556,7 +556,7 @@ class ProductGrid {
                         this.debounce(this.sendIframeHeight.bind(this), 100)();
                     }
                 });
-                // Observe changes to child elements and their attributes within productsContainer
+                // Observe changes to child elements and their attributes within gifts-for-menopauseContainer
                 this.mutationObserver.observe(this.mainContentContainer, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
             }
         }
