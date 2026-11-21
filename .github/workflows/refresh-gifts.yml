@@ -1,0 +1,120 @@
+name: Refresh gifts database
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+      timezone: America/New_York
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-gifts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Export Google Sheet to gifts.json
+        run: |
+          python - <<'PY'
+          import csv
+          import io
+          import json
+          import re
+          import urllib.request
+
+          sheet_id = "1xxZ1GKScq9eR2xALbXOGm7TphdM8FFLmVjix_3ZXuUw"
+          csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0"
+
+          request = urllib.request.Request(
+              csv_url,
+              headers={"User-Agent": "MenoHello-Gifts-Database/1.0"}
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              csv_text = response.read().decode("utf-8-sig")
+
+          reader = csv.DictReader(io.StringIO(csv_text))
+          if not reader.fieldnames:
+              raise RuntimeError("The Google Sheet returned no column headers.")
+
+          headers = [h.strip().lower() for h in reader.fieldnames]
+
+          def find_column(exact_matches, partial_matches=None):
+              if partial_matches is None:
+                  partial_matches = exact_matches
+              for index, header in enumerate(headers):
+                  if header in exact_matches:
+                      return reader.fieldnames[index]
+              for index, header in enumerate(headers):
+                  if any(term in header for term in partial_matches):
+                      return reader.fieldnames[index]
+              return None
+
+          name_col = find_column(["productname", "product name", "name"])
+          category_col = find_column(["category"])
+          price_col = find_column(["approxprice", "approx price", "price"])
+          image_col = find_column(
+              ["imageurl", "image url", "image", "img", "picture"],
+              ["image", "img", "picture"]
+          )
+          url_col = find_column(
+              ["amazonlink", "amazon link", "product url", "product link", "url", "link"],
+              ["amazonlink", "amazon link", "product url", "product link", "url", "link"]
+          )
+          rating_col = find_column(["ratings", "rating", "star"])
+          badge_col = find_column(["badge"])
+
+          if name_col is None:
+              raise RuntimeError("Could not identify the productname column.")
+
+          def value(row, column, default=""):
+              if not column:
+                  return default
+              return (row.get(column) or "").strip()
+
+          def number(raw, default):
+              cleaned = re.sub(r"[^0-9.\\-]", "", raw or "")
+              try:
+                  return float(cleaned) if cleaned else default
+              except ValueError:
+                  return default
+
+          gifts = []
+          for row_number, row in enumerate(reader, start=2):
+              name = value(row, name_col)
+              if not name:
+                  continue
+              gifts.append({
+                  "id": row_number,
+                  "name": name,
+                  "category": value(row, category_col, "Uncategorized") or "Uncategorized",
+                  "price": number(value(row, price_col), 0),
+                  "image": value(row, image_col),
+                  "url": value(row, url_col, "#") or "#",
+                  "rating": number(value(row, rating_col), 4.0),
+                  "badge": value(row, badge_col)
+              })
+
+          if not gifts:
+              raise RuntimeError("No gifts were found; refusing to overwrite gifts.json.")
+
+          with open("gifts.json", "w", encoding="utf-8") as output:
+              json.dump(gifts, output, ensure_ascii=False, indent=2)
+              output.write("\\n")
+
+          print(f"Exported {len(gifts)} gifts to gifts.json")
+          PY
+
+      - name: Commit updated gift data
+        run: |
+          git add gifts.json
+          if git diff --cached --quiet -- gifts.json; then
+            echo "No gift changes found."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update gifts database from Google Sheet"
+          git push
