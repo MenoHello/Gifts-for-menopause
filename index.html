@@ -771,6 +771,15 @@
           return item.name;
         });
 
+        /* Build the filter buttons from the Category column (column B). */
+        categories = Array.from(new Set(
+          products
+            .map(function(item) { return item.category.trim(); })
+            .filter(function(category) {
+              return category && category !== 'Uncategorized';
+            })
+        ));
+
         if (!products.length) {
           throw new Error('No gifts were found in gifts.json.');
         }
