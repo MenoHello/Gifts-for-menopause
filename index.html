@@ -729,686 +729,71 @@
 
 
   /* =========================================================
-     LOAD GOOGLE SHEET
+     LOAD JSON DATABASE
      ========================================================= */
 
-  function loadProductsFromSheet() {
+  function loadProductsFromJSON() {
 
-    var csvUrl =
-      'https://docs.google.com/spreadsheets/d/' +
-      SHEET_ID +
-      '/export?format=csv&gid=0';
-
-
-    /*
-      IMPORTANT:
-      The page is already visible at this point.
-
-      We do NOT hide pgMainContent while the
-      Google Sheet is loading.
-    */
-
-    fetch(csvUrl)
+    fetch('./gifts.json?cache=' + Date.now())
 
       .then(function(response) {
 
         if (!response.ok) {
-
-          throw new Error(
-            'Failed to fetch: ' + response.status
-          );
-
+          throw new Error('Failed to fetch gifts.json: ' + response.status);
         }
 
-        return response.text();
+        return response.json();
 
       })
 
-      .then(function(csvText) {
+      .then(function(data) {
 
-        parseCSVData(csvText);
+        if (!Array.isArray(data)) {
+          throw new Error('The gifts database is not in the expected format.');
+        }
+
+        products = data.map(function(item, index) {
+
+          return {
+            id: item.id || index + 1,
+            name: item.name || '',
+            price: Number(item.price) || 0,
+            rating: Number(item.rating) || 4.0,
+            category: item.category || 'Uncategorized',
+            image: item.image || '',
+            url: item.url || '#',
+            badge: item.badge || '',
+            description: item.description || ''
+          };
+
+        }).filter(function(item) {
+          return item.name;
+        });
+
+        if (!products.length) {
+          throw new Error('No gifts were found in gifts.json.');
+        }
 
         dataLoaded = true;
-
         init();
 
       })
 
       .catch(function(error) {
 
-        console.error(
-          'CSV loading failed:',
-          error
-        );
+        console.error('Gift database loading failed:', error);
 
+        var grid = document.getElementById('pgProductsGrid');
+        if (grid) {
+          grid.innerHTML = '';
+        }
 
-        /*
-          Fallback to Google Visualization JSON.
-        */
-
-        var jsonUrl =
-          'https://docs.google.com/spreadsheets/d/' +
-          SHEET_ID +
-          '/gviz/tq?tqx=out:json&sheet=' +
-          encodeURIComponent(SHEET_NAME);
-
-
-        fetch(jsonUrl)
-
-          .then(function(response) {
-
-            if (!response.ok) {
-
-              throw new Error(
-                'JSON request failed: ' +
-                response.status
-              );
-
-            }
-
-            return response.text();
-
-          })
-
-          .then(function(text) {
-
-            var json =
-              text.substr(47).slice(0, -2);
-
-            var data =
-              JSON.parse(json);
-
-            parseSheetData(data);
-
-            dataLoaded = true;
-
-            init();
-
-          })
-
-          .catch(function(error2) {
-
-            console.error(
-              'Both methods failed:',
-              error,
-              error2
-            );
-
-
-            var grid =
-              document.getElementById(
-                'pgProductsGrid'
-              );
-
-            if (grid) {
-              grid.innerHTML = '';
-            }
-
-
-            var errorDiv =
-              document.getElementById(
-                'pgErrorState'
-              );
-
-            errorDiv.textContent =
-              'Error loading gifts. Please ensure the Google Sheet is published to the web.';
-
-            errorDiv.style.display = 'block';
-
-          });
+        var errorDiv = document.getElementById('pgErrorState');
+        errorDiv.textContent =
+          'Error loading gifts. Please try again later.';
+        errorDiv.style.display = 'block';
 
       });
-
-  }
-
-
-  /* =========================================================
-     CSV PARSER
-     ========================================================= */
-
-  function parseCSVData(csvText) {
-
-    var lines =
-      csvText.split('\n');
-
-
-    if (lines.length < 2) {
-
-      throw new Error(
-        'Sheet appears to be empty'
-      );
-
-    }
-
-
-    var headers =
-      parseCSVLine(lines[0]);
-
-
-    var colIndices = {
-
-      name: -1,
-
-      price: -1,
-
-      rating: -1,
-
-      category: -1,
-
-      image: -1,
-
-      url: -1,
-
-      description: -1
-
-    };
-
-
-    for (
-      var i = 0;
-      i < headers.length;
-      i++
-    ) {
-
-      var header =
-        headers[i]
-          .toLowerCase()
-          .trim();
-
-
-      if (
-        header.indexOf('name') !== -1 ||
-        header === 'product'
-      ) {
-
-        colIndices.name = i;
-
-      }
-
-      else if (
-        header.indexOf('price') !== -1
-      ) {
-
-        colIndices.price = i;
-
-      }
-
-      else if (
-        header.indexOf('rating') !== -1 ||
-        header.indexOf('star') !== -1
-      ) {
-
-        colIndices.rating = i;
-
-      }
-
-      else if (
-        header.indexOf('category') !== -1 ||
-        header.indexOf('symptom') !== -1
-      ) {
-
-        colIndices.category = i;
-
-      }
-
-      else if (
-        header.indexOf('image') !== -1 ||
-        header.indexOf('img') !== -1 ||
-        header.indexOf('picture') !== -1
-      ) {
-
-        colIndices.image = i;
-
-      }
-
-      else if (
-        header.indexOf('url') !== -1 ||
-        header.indexOf('link') !== -1
-      ) {
-
-        colIndices.url = i;
-
-      }
-
-      else if (
-        header.indexOf('description') !== -1 ||
-        header.indexOf('desc') !== -1
-      ) {
-
-        colIndices.description = i;
-
-      }
-
-    }
-
-
-    /*
-      Description fallback.
-    */
-
-    /* Gifts sheet has no description column.
-       Leave description unset so cards fall back to category. */
-
-
-
-    var categorySet = new Set();
-
-
-    for (
-      var j = 1;
-      j < lines.length;
-      j++
-    ) {
-
-      var line =
-        lines[j].trim();
-
-
-      if (!line) {
-        continue;
-      }
-
-
-      var values =
-        parseCSVLine(line);
-
-
-      var name =
-        values[colIndices.name]
-          ? values[colIndices.name].trim()
-          : '';
-
-
-      if (!name) {
-        continue;
-      }
-
-
-      var product = {
-
-        id: j,
-
-        name: name,
-
-        price:
-          parseFloat(
-            values[colIndices.price]
-          ) || 0,
-
-        rating:
-          parseFloat(
-            values[colIndices.rating]
-          ) || 4.0,
-
-        category:
-          values[colIndices.category]
-            ? values[colIndices.category].trim()
-            : 'Uncategorized',
-
-        image:
-          values[colIndices.image]
-            ? values[colIndices.image].trim()
-            : '',
-
-        url:
-          values[colIndices.url]
-            ? values[colIndices.url].trim()
-            : '#',
-
-        description:
-          values[colIndices.description]
-            ? values[colIndices.description].trim()
-            : ''
-
-      };
-
-
-      products.push(product);
-
-      categorySet.add(product.category);
-
-    }
-
-
-    categories = [
-      'Beautiful Things',
-      'Make Her Smile',
-      'Mindfulness',
-      'Mood Booster',
-      'On The Go Essentials',
-      'Pamper & Unwind',
-      'Sending Hugs',
-      'Sleep Well',
-      'Stay Cool',
-      'Stress Relief',
-      'Thoughtful Gifts'
-    ];
-
-  }
-
-
-  /* =========================================================
-     CSV LINE PARSER
-     ========================================================= */
-
-  function parseCSVLine(line) {
-
-    var result = [];
-
-    var current = '';
-
-    var inQuotes = false;
-
-
-    for (
-      var i = 0;
-      i < line.length;
-      i++
-    ) {
-
-      var char = line[i];
-
-
-      if (char === '"') {
-
-        if (
-          inQuotes &&
-          line[i + 1] === '"'
-        ) {
-
-          current += '"';
-
-          i++;
-
-        }
-
-        else {
-
-          inQuotes = !inQuotes;
-
-        }
-
-      }
-
-      else if (
-        char === ',' &&
-        !inQuotes
-      ) {
-
-        result.push(current);
-
-        current = '';
-
-      }
-
-      else {
-
-        current += char;
-
-      }
-
-    }
-
-
-    result.push(current);
-
-    return result;
-
-  }
-
-
-  /* =========================================================
-     GOOGLE SHEETS JSON FALLBACK
-     ========================================================= */
-
-  function parseSheetData(data) {
-
-    var rows =
-      data.table.rows;
-
-    var headers = [];
-
-
-    if (
-      rows.length > 0 &&
-      rows[0].c
-    ) {
-
-      for (
-        var i = 0;
-        i < rows[0].c.length;
-        i++
-      ) {
-
-        var cell =
-          rows[0].c[i];
-
-        headers.push(
-          cell && cell.v
-            ? cell.v.toString().trim()
-            : ''
-        );
-
-      }
-
-    }
-
-
-    var colIndices = {
-
-      name: -1,
-
-      price: -1,
-
-      rating: -1,
-
-      category: -1,
-
-      image: -1,
-
-      url: -1,
-
-      description: -1
-
-    };
-
-
-    for (
-      var j = 0;
-      j < headers.length;
-      j++
-    ) {
-
-      var header =
-        headers[j].toLowerCase();
-
-
-      if (
-        header.indexOf('name') !== -1 ||
-        header === 'product'
-      ) {
-
-        colIndices.name = j;
-
-      }
-
-      else if (
-        header.indexOf('price') !== -1
-      ) {
-
-        colIndices.price = j;
-
-      }
-
-      else if (
-        header.indexOf('rating') !== -1 ||
-        header.indexOf('star') !== -1
-      ) {
-
-        colIndices.rating = j;
-
-      }
-
-      else if (
-        header.indexOf('category') !== -1 ||
-        header.indexOf('symptom') !== -1
-      ) {
-
-        colIndices.category = j;
-
-      }
-
-      else if (
-        header.indexOf('image') !== -1 ||
-        header.indexOf('img') !== -1
-      ) {
-
-        colIndices.image = j;
-
-      }
-
-      else if (
-        header.indexOf('url') !== -1 ||
-        header.indexOf('link') !== -1
-      ) {
-
-        colIndices.url = j;
-
-      }
-
-      else if (
-        header.indexOf('description') !== -1 ||
-        header.indexOf('desc') !== -1
-      ) {
-
-        colIndices.description = j;
-
-      }
-
-    }
-
-
-    /* Gifts sheet has no description column.
-       Leave description unset so cards fall back to category. */
-
-
-
-    var categorySet = new Set();
-
-
-    for (
-      var k = 1;
-      k < rows.length;
-      k++
-    ) {
-
-      var row = rows[k];
-
-
-      if (!row.c) {
-        continue;
-      }
-
-
-      var product = {
-
-        id: k,
-
-        name:
-          getCellValue(
-            row.c[colIndices.name]
-          ) || 'Unknown Product',
-
-        price:
-          parseFloat(
-            getCellValue(
-              row.c[colIndices.price]
-            )
-          ) || 0,
-
-        rating:
-          parseFloat(
-            getCellValue(
-              row.c[colIndices.rating]
-            )
-          ) || 4.0,
-
-        category:
-          getCellValue(
-            row.c[colIndices.category]
-          ) || 'Uncategorized',
-
-        image:
-          getCellValue(
-            row.c[colIndices.image]
-          ) || '',
-
-        url:
-          getCellValue(
-            row.c[colIndices.url]
-          ) || '#',
-
-        description:
-          getCellValue(
-            row.c[colIndices.description]
-          ) || ''
-
-      };
-
-
-      if (
-        product.name &&
-        product.name !== 'Unknown Product'
-      ) {
-
-        products.push(product);
-
-        categorySet.add(
-          product.category
-        );
-
-      }
-
-    }
-
-
-    categories = [
-      'Beautiful Things',
-      'Make Her Smile',
-      'Mindfulness',
-      'Mood Booster',
-      'On The Go Essentials',
-      'Pamper & Unwind',
-      'Sending Hugs',
-      'Sleep Well',
-      'Stay Cool',
-      'Stress Relief',
-      'Thoughtful Gifts'
-    ];
-
-  }
-
-
-  function getCellValue(cell) {
-
-    if (!cell) {
-      return '';
-    }
-
-
-    if (
-      cell.v !== undefined &&
-      cell.v !== null
-    ) {
-
-      return cell.v
-        .toString()
-        .trim();
-
-    }
-
-
-    return '';
 
   }
 
@@ -2370,21 +1755,11 @@
   }
 
 
-  /* =========================================================
-     START
-     ========================================================= */
-
-  /*
-    The interface is already visible.
-
-    Skeleton cards are already visible.
-
-    The Google Sheet now loads in the background.
-  */
+  /* The interface and skeleton cards are visible while gifts.json loads. */
 
   showSkeletons();
 
-  loadProductsFromSheet();
+  loadProductsFromJSON();
 
 
 })();
