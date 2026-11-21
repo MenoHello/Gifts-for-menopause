@@ -1767,3 +1767,50 @@
 
 </script>
 
+
+<script>
+(function () {
+  var resizeTimer;
+
+  function reportHeight() {
+    var height = Math.ceil(Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+      document.documentElement.getBoundingClientRect().height
+    ));
+
+    window.parent.postMessage({
+      type: 'menohello-resize',
+      height: height
+    }, 'https://www.menohello.com');
+  }
+
+  function scheduleReport() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(reportHeight, 100);
+  }
+
+  if ('ResizeObserver' in window) {
+    var observer = new ResizeObserver(scheduleReport);
+    observer.observe(document.documentElement);
+    observer.observe(document.body);
+  }
+
+  window.addEventListener('load', scheduleReport);
+  window.addEventListener('resize', scheduleReport);
+  document.addEventListener('click', scheduleReport);
+  document.addEventListener('input', scheduleReport);
+  document.addEventListener('change', scheduleReport);
+
+  document.querySelectorAll('img').forEach(function (img) {
+    img.addEventListener('load', scheduleReport);
+    img.addEventListener('error', scheduleReport);
+  });
+
+  scheduleReport();
+  setTimeout(scheduleReport, 500);
+  setTimeout(scheduleReport, 1500);
+})();
+</script>
+
+
