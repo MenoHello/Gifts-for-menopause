@@ -778,7 +778,9 @@
             .filter(function(category) {
               return category && category !== 'Uncategorized';
             })
-        ));
+        )).sort(function(a, b) {
+          return a.localeCompare(b);
+        });
 
         if (!products.length) {
           throw new Error('No gifts were found in gifts.json.');
@@ -1779,46 +1781,49 @@
 
 <script>
 (function () {
-  var resizeTimer;
+    'use strict';
 
-  function reportHeight() {
-    var height = Math.ceil(Math.max(
-      document.documentElement.scrollHeight,
-      document.body.scrollHeight,
-      document.documentElement.getBoundingClientRect().height
-    ));
+    const container = document.querySelector('.product-grid-container');
+    const grid = document.getElementById('pgProductsGrid');
 
-    window.parent.postMessage({
-      type: 'menohello-resize',
-      height: height
-    }, 'https://www.menohello.com');
-  }
+    if (!container || !grid) return;
 
-  function scheduleReport() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(reportHeight, 100);
-  }
+    let resizeTimer;
 
-  if ('ResizeObserver' in window) {
-    var observer = new ResizeObserver(scheduleReport);
-    observer.observe(document.documentElement);
-    observer.observe(document.body);
-  }
+    function reportHeight() {
+        clearTimeout(resizeTimer);
 
-  window.addEventListener('load', scheduleReport);
-  window.addEventListener('resize', scheduleReport);
-  document.addEventListener('click', scheduleReport);
-  document.addEventListener('input', scheduleReport);
-  document.addEventListener('change', scheduleReport);
+        resizeTimer = setTimeout(function () {
+            const height = Math.ceil(
+                container.getBoundingClientRect().bottom +
+                window.scrollY
+            );
 
-  document.querySelectorAll('img').forEach(function (img) {
-    img.addEventListener('load', scheduleReport);
-    img.addEventListener('error', scheduleReport);
-  });
+            window.parent.postMessage(
+                {
+                    type: 'menohello-resize',
+                    height: height
+                },
+                '*'
+            );
+        }, 150);
+    }
 
-  scheduleReport();
-  setTimeout(scheduleReport, 500);
-  setTimeout(scheduleReport, 1500);
+    const resizeObserver = new ResizeObserver(reportHeight);
+    resizeObserver.observe(container);
+    resizeObserver.observe(grid);
+
+    const mutationObserver = new MutationObserver(reportHeight);
+    mutationObserver.observe(grid, {
+        childList: true,
+        subtree: true
+    });
+
+    document.addEventListener('load', reportHeight, true);
+    window.addEventListener('load', reportHeight);
+    window.addEventListener('resize', reportHeight);
+
+    reportHeight();
 })();
 </script>
 
