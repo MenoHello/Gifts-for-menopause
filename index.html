@@ -1,1001 +1,2393 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-     <title>Gifts for Menopause</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <style>
-        /* Product card element spacing - Use this for global adjustments on desktop */
-        :root {
-            --desktop-card-element-spacing: 6px; /* Further reduced slightly */
-            --desktop-card-button-margin-top: auto; /* Allow button to be pushed to the bottom */
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #ffe9e5;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-        }
-
-        .header {
-            background: #ffe9e5;
-            padding: 15px 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            max-width: 1440px;
-            margin: 0 auto;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            transition: transform 0.3s ease-in-out; /* Smooth transition for header hide/show */
-        }
-
-        .header.hidden {
-            transform: translateY(-100%); /* Move header up to hide */
-        }
-
-        .header .category-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-.header,
-.header * {
-  color: black !important;
-  text-decoration: none;
+<style>
+.product-grid-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Poppins', sans-serif;
+  padding: 20px;
+  background: #ffe9e5;
+  border-radius: 12px;
 }
 
-        .header .category-dropdown select {
-            background: white;
-            border: 1px solid #ffd2cb;
-            border-radius: 6px;
-            padding: 8px 16px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            appearance: none;
-            padding-right: 40px;
-            background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 12px;
-        }
+.pg-header h1 {
+  font-size: 32px;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0 0 10px 0;
+}
 
-        .header .category-dropdown select:hover {
-            background-color: #ffd2cb;
-        }
+.pg-header p {
+  color: #6b7280;
+  margin: 0 0 30px 0;
+}
 
-        .header .category-dropdown select:focus {
-            outline: none;
-            border-color: #ffd2cb;
-        }
+.pg-loading {
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+  font-size: 16px;
+}
 
-        .header .category-dropdown select:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            background-color: #f5f5f5;
-        }
+.pg-error {
+  text-align: center;
+  padding: 60px 20px;
+  color: #dc2626;
+  font-size: 18px;
+}
 
-        .header .tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: flex-start;
-        }
+.pg-controls {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
 
-        .header .tabs button {
-            background: white;
-            border: 1px solid #ffd2cb;
-            border-radius: 6px;
-            padding: 8px 16px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+.pg-top-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
 
-        .header .tabs button:hover {
-            background-color: #ffd2cb;
-            transform: translateY(-1px);
-        }
+.pg-search-box {
+  flex: 0 1 260px;
+  width: 260px;
+  max-width: 260px;
+  position: relative;
+}
 
-        .header .tabs button.active {
-            background-color: #ffa798;
-            color: white;
-        }
+.pg-search-box input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 34px 10px 40px;
+  border: 1px solid #c9c9d1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1f2937;
+}
 
-        .header .tabs button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            background-color: #f5f5f5;
-            transform: none;
-        }
+.pg-search-box input:focus {
+  outline: none;
+  border-color: #c03558;
+}
 
-        .header .tabs button:disabled:hover {
-            background-color: #f5f5f5;
-            transform: none;
-        }
+.pg-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
 
-        input[type="text"], select, #favoritesToggle, #clearSearch {
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid #ffd2cb;
-            font-size: 1rem;
-            font-family: 'Poppins', sans-serif;
-            transition: border-color 0.3s ease;
-        }
+.pg-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: #c03558;
+  color: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
 
-        input[type="text"]:focus, select:focus {
-            outline: none;
-            border-color: #ffd2cb;
-        }
+.pg-search-clear:hover {
+  background: #ffffff;
+  color: #c03558;
+}
 
-        #favoritesToggle, #clearSearch {
-            cursor: pointer;
-            font-weight: 600;
-            background: white;
-            transition: background-color 0.3s ease;
-        }
+.pg-sort-box select {
+  padding: 10px 15px;
+  border: 1px solid #c9c9d1;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  color: #1f2937;
+  cursor: pointer;
+}
 
-        #favoritesToggle:hover, #clearSearch:hover {
-            background-color: #ffd2cb;
-        }
+.pg-favorites-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
 
-        #favoritesToggle.active {
-            background-color: #ffa798;
-            color: white;
-        }
+.pg-favorites-btn.active {
+  background: #6b3fa0;
+  color: white;
+}
 
-        /* IMPORTANT: Ensure this container wraps all content whose height you want to measure */
-        #productsContainer {
-            width: 100%;
-            overflow-x: hidden;
-            /* Added min-height to help with initial render stability */
-            min-height: 200px; 
-            box-sizing: border-box; /* Include padding/border in element's total width and height */
-        }
+.pg-favorites-btn:not(.active) {
+  background: #ffffff;
+  color: #c03558;
+  border: 1.5px solid #c03558;
+}
 
-        #product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 40px;
-            gap: 30px;
-        }
+.pg-favorites-btn:not(.active):hover {
+  background: #c03558;
+  color: white;
+}
 
-        .product-card {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between; /* Distribute space to push button down */
-            align-items: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            min-height: 400px; /* Ensures cards have a minimum height */
-            padding-bottom: 12px; /* Padding inside the card at the bottom */
-        }
+.pg-category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
+.pg-category-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
 
-        .product-card img {
-            max-width: 100%;
-            height: 190px;
-            object-fit: contain;
-            border-radius: 6px;
-            margin-top: var(--desktop-card-element-spacing);
-            margin-bottom: var(--desktop-card-element-spacing);
-            transition: transform 0.3s ease;
-            flex-shrink: 0;
-        }
+.pg-category-btn.active {
+  background: #c03558;
+  color: white;
+}
 
-        .product-card:hover img {
-            transform: scale(1.05);
-        }
+.pg-category-btn:not(.active) {
+  background: #f3f4f6;
+  color: #374151;
+}
 
-        .favorite {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            cursor: pointer;
-            font-size: 2rem;
-            color: #ccc;
-            transition: all 0.3s ease;
-        }
+.pg-category-btn:hover:not(.active) {
+  background: #ffffff;
+  color: #c03558;
+  border: 2px solid #c03558;
+}
 
-        .favorite:hover {
-            transform: scale(1.1);
-        }
+.pg-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
 
-        .favorite.active {
-            color: #cd2609;
-        }
+.pg-product-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+}
 
-        .badge {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            background: #a855f7;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            z-index: 10;
-        }
+.pg-product-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
 
-        .stars {
-            margin-top: var(--desktop-card-element-spacing);
-            margin-bottom: var(--desktop-card-element-spacing);
-            font-size: 0.7rem;
-            color: gold;
-        }
+.pg-product-image-container {
+  position: relative;
+  background: #f9fafb;
+  padding: 20px;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-        .stars i {
-            margin: 0 2px;
-        }
+.pg-product-image {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
 
-        .product-card h3 {
-            margin-top: var(--desktop-card-element-spacing);
-            margin-bottom: var(--desktop-card-element-spacing);
-            font-weight: 700;
-            font-size: 1.1rem;
-            line-height: 1.3;
-            /* No flex-grow on h3 here, allowing content to take natural space */
-        }
+.pg-favorite-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
 
-        .product-card p.price {
-            font-weight: 600;
-            margin-top: var(--desktop-card-element-spacing);
-            margin-bottom: var(--desktop-card-element-spacing);
-            font-size: 1.2rem;
-            color: #333;
-            flex-shrink: 0;
-        }
+.pg-favorite-btn:hover {
+  transform: scale(1.1);
+}
 
-        .product-card a {
-            display: inline-block;
-            margin-top: var(--desktop-card-button-margin-top); /* This will be 'auto' for alignment */
-            margin-bottom: 0; /* Ensures button sticks to the bottom edge of content */
-            background-color: #ffa798;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 2;
-            flex-shrink: 0;
-        }
+.pg-heart-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: #9ca3af;
+  stroke-width: 2;
+}
 
-        .product-card a:hover {
-            background-color: #ff9385;
-            transform: translateY(-2px);
-        }
+.pg-favorite-btn.favorited .pg-heart-icon {
+  fill: #f47f91;
+  stroke: #f47f91;
+}
 
-        .loading {
-            text-align: center;
-            padding: 50px;
-            font-size: 1.2rem;
-            color: #666;
-        }
+.pg-product-info {
+  padding: 16px;
+}
 
-        .error {
-            text-align: center;
-            padding: 50px;
-            color: #d32f2f;
-            font-size: 1.1rem;
-        }
+.pg-product-name {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 10px 0;
+  font-size: 15px !important;
+  line-height: 1.3;
+  height: 2.6em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
 
-        .no-results {
-            text-align: center;
-            padding: 50px;
-            color: #666;
-            font-size: 1.1rem;
-        }
+.pg-product-price {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1f2937;
+}
 
-        /* Mobile-specific styles */
-        @media (max-width: 768px) {
-            body {
-                overflow-x: hidden;
-            }
+.pg-price-rating-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 10px 0;
+}
 
-            .header {
-                overflow-x: hidden;
-                position: sticky;
-                top: 0;
-                transform: translateY(0);
-            }
+.pg-stars {
+  display: inline-flex;
+  gap: 2px;
+}
 
-            .header .tabs button {
-                display: none;
-            }
+.pg-star {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 1;
+}
 
-            .header .category-dropdown {
-                display: inline-block;
-                min-width: 0;
-                max-width: 100%;
-            }
+.pg-star-bg,
+.pg-star-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
 
-            .header .category-dropdown select {
-                min-width: 120px;
-                max-width: 100%;
-            }
+.pg-star-bg {
+  color: #e5e7eb;
+}
 
-            #product-grid {
-                grid-template-columns: repeat(2, 1fr);
-                padding: 15px;
-                gap: 15px;
-                max-width: 100%;
-                overflow-x: hidden;
-            }
+.pg-star-fill {
+  overflow: hidden;
+  white-space: nowrap;
+  color: #fbbf24;
+}
 
-            .product-card {
-                min-height: 0; /* Allow height to adjust on mobile */
-               
-                padding: 8px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between; /* Distribute space to push button down */
-                padding-bottom: 8px;
-            }
+.pg-product-category {
+  font-size: 12px;
+  color: #4b5563;
+  margin: 0 0 15px 0;
+  line-height: 1.4;
+}
 
-            .product-card:hover {
-                transform: none;
-                background-color: #ffd2cb;
-            }
+.pg-shop-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #c03558 !important;
+  color: white !important;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
 
-            .product-card img {
-                height: 86px;
-                margin-top: 8px;
-                margin-bottom: 5px;
-            }
+.pg-shop-btn:hover {
+  background: #f47f91 !important;
+  color: white !important;
+}
 
-            .product-card:hover img {
-                transform: none;
-            }
+.pg-no-results {
+  text-align: center;
+  padding: 60px 20px;
+}
 
-            .favorite {
-                font-size: 1.2rem;
-                top: 8px;
-                right: 8px;
-            }
+.pg-no-results p {
+  color: #6b7280;
+  font-size: 18px;
+  margin: 0 0 20px 0;
+}
 
-            .badge {
-                top: 8px;
-                left: 8px;
-                font-size: 0.6rem;
-                padding: 2px 6px;
-            }
+.pg-clear-btn {
+  padding: 10px 24px;
+  background: #c03558;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-            .product-card h3 {
-                display: none; /* Keep h3 hidden on mobile */
-                flex-grow: 0;
-            }
+.pg-clear-btn:hover {
+  background: #f47f91;
+}
 
-            .stars {
-                margin-top: 4px;
-                margin-bottom: 4px;
-                font-size: 0.5rem;
-            }
 
-            .stars i {
-                margin: 0 1px;
-            }
+/* =========================================================
+   FAST LOADING
+   Lightweight placeholders appear before the Sheet loads.
+   ========================================================= */
 
-            .product-card p.price {
-                font-size: 0.9rem;
-                margin-top: 2px;
-                margin-bottom: 6px;
-                font-weight: 700;
-            }
+.pg-skeleton-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
 
-            .product-card a {
-                margin-top: auto; /* Push to the bottom on mobile too */
-                margin-bottom: 0;
-                padding: 6px 12px;
-                font-size: 0.8rem;
-                border-radius: 4px;
-                z-index: 10;
-            }
+.pg-skeleton-image {
+  height: 260px;
+  background: #f4f4f4;
+  position: relative;
+  overflow: hidden;
+}
 
-            .product-card a:hover {
-                transform: none;
-            }
-        }
+.pg-skeleton-content {
+  padding: 16px;
+}
 
-        /* Desktop-specific styles */
-        @media (min-width: 769px) {
-            .header .category-dropdown {
-                display: none;
-            }
+.pg-skeleton-line {
+  height: 14px;
+  background: #eeeeee;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
 
-            .header .tabs button {
-                display: inline-block;
-            }
+.pg-skeleton-line.short {
+  width: 45%;
+}
 
-            .favorite.active {
-                color: #cd2609;
-            }
-        }
-    </style>
-</head>
-<body>
+.pg-skeleton-line.medium {
+  width: 70%;
+}
 
-    <div id="productsContainer"> 
-        <div class="header">
-            <input type="text" id="searchInput" placeholder="Search products..." aria-label="Search products">
-            <button id="clearSearch" style="display: none;" aria-label="Clear search">Clear Search</button>
-            <select id="sortPrice" aria-label="Sort by price">
-                <option value="default">Sort</option>
-                <option value="featured">Featured</option>
-                <option value="low">Price: Low to High</option>
-                <option value="high">Price: High to Low</option>
-            </select>
-            <button id="favoritesToggle" aria-label="Toggle favorites view">Show My Favorites</button>
-            <div class="category-dropdown">
-                <select id="categoryDropdown" aria-label="Select category">
-                    <option value="default">Categories</option>
-                </select>
-            </div>
-            <div class="tabs" id="categoryTabs" role="tablist"></div>
+.pg-skeleton-line.long {
+  width: 90%;
+}
+
+.pg-skeleton-button {
+  height: 42px;
+  background: #eeeeee;
+  border-radius: 8px;
+  margin-top: 18px;
+}
+
+/* Subtle loading movement without JavaScript */
+.pg-skeleton-image::after,
+.pg-skeleton-line::after,
+.pg-skeleton-button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.55),
+    transparent
+  );
+  animation: pgSkeletonShimmer 1.4s infinite;
+}
+
+@keyframes pgSkeletonShimmer {
+  100% {
+    left: 150%;
+  }
+}
+
+
+/* Keep the actual product grid from appearing before data */
+.pg-products-grid.pg-loading-grid {
+  display: grid;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .pg-products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+
+  .pg-header h1 {
+    font-size: 24px;
+  }
+
+  .pg-search-box {
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+}
+</style>
+
+
+<div class="product-grid-container">
+
+  <!-- FAST LOADING:
+       The controls are now visible immediately. -->
+  <div id="pgMainContent">
+
+    <div class="pg-controls">
+
+      <div class="pg-top-controls">
+
+        <div class="pg-search-box">
+
+          <svg
+            class="pg-search-icon"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+
+          <input
+            type="text"
+            id="pgSearchInput"
+            placeholder="Search gifts..."
+            aria-label="Search products"
+          >
+
+          <button
+            type="button"
+            class="pg-search-clear"
+            id="pgSearchClear"
+            aria-label="Clear search"
+          >
+            &#10005;
+          </button>
+
         </div>
-        <div id="product-grid" role="main"></div>
-    </div> <script>
-class ProductGrid {
-    constructor() {
-        this.sheetId = '1xxZ1GKScq9eR2xALbXOGm7TphdM8FFLmVjix_3ZXuUw';
-        this.gid = '0';
-        this.csvUrl = `https://docs.google.com/spreadsheets/d/${this.sheetId}/export?format=csv&gid=${this.gid}`;
-        this.products = [];
-        this.filteredProducts = [];
-        this.categories = new Set();
-        this.currentCategory = 'default';
-        this.showingFavorites = false;
-        this.isSearching = false;
-        this.favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
 
-        this.header = document.querySelector('.header');
-        // Adjust this value based on your first row's height. You might need to test this.
-        this.firstRowThreshold = 500; // Example: assuming ~2 products fit vertically before scrolling
 
-        // Reference to the main content container for height calculation
-        this.mainContentContainer = document.getElementById('productsContainer');
-        this.resizeObserver = null;
-        this.mutationObserver = null; // Added MutationObserver
-        
-        this.init();
+        <div class="pg-sort-box">
+
+          <select id="pgSortSelect" aria-label="Sort products">
+
+            <option value="featured">Sort</option>
+
+            <option value="price-low">
+              Price: Low to High
+            </option>
+
+            <option value="price-high">
+              Price: High to Low
+            </option>
+
+            <option value="rating">
+              Highest Rated
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <button
+          class="pg-favorites-btn"
+          id="pgFavoritesBtn"
+          type="button"
+        >
+          <span id="pgFavBtnLabel">
+            Show My Favorites
+          </span>
+
+          <span id="pgFavCount"></span>
+
+        </button>
+
+      </div>
+
+
+      <div
+        class="pg-category-filters"
+        id="pgCategoryFilters"
+      >
+      </div>
+
+    </div>
+
+
+    <!--
+      FAST LOADING:
+      Skeleton cards appear immediately.
+      JavaScript replaces them with real products.
+    -->
+
+    <div
+      class="pg-products-grid pg-loading-grid"
+      id="pgProductsGrid"
+      aria-live="polite"
+    >
+
+      <div class="pg-skeleton-card">
+        <div class="pg-skeleton-image"></div>
+        <div class="pg-skeleton-content">
+          <div class="pg-skeleton-line long"></div>
+          <div class="pg-skeleton-line short"></div>
+          <div class="pg-skeleton-line medium"></div>
+          <div class="pg-skeleton-button"></div>
+        </div>
+      </div>
+
+      <div class="pg-skeleton-card">
+        <div class="pg-skeleton-image"></div>
+        <div class="pg-skeleton-content">
+          <div class="pg-skeleton-line long"></div>
+          <div class="pg-skeleton-line short"></div>
+          <div class="pg-skeleton-line medium"></div>
+          <div class="pg-skeleton-button"></div>
+        </div>
+      </div>
+
+      <div class="pg-skeleton-card">
+        <div class="pg-skeleton-image"></div>
+        <div class="pg-skeleton-content">
+          <div class="pg-skeleton-line long"></div>
+          <div class="pg-skeleton-line short"></div>
+          <div class="pg-skeleton-line medium"></div>
+          <div class="pg-skeleton-button"></div>
+        </div>
+      </div>
+
+      <div class="pg-skeleton-card">
+        <div class="pg-skeleton-image"></div>
+        <div class="pg-skeleton-content">
+          <div class="pg-skeleton-line long"></div>
+          <div class="pg-skeleton-line short"></div>
+          <div class="pg-skeleton-line medium"></div>
+          <div class="pg-skeleton-button"></div>
+        </div>
+      </div>
+
+      <div class="pg-skeleton-card">
+        <div class="pg-skeleton-image"></div>
+        <div class="pg-skeleton-content">
+          <div class="pg-skeleton-line long"></div>
+          <div class="pg-skeleton-line short"></div>
+          <div class="pg-skeleton-line medium"></div>
+          <div class="pg-skeleton-button"></div>
+        </div>
+      </div>
+
+      <div class="pg-skeleton-card">
+        <div class="pg-skeleton-image"></div>
+        <div class="pg-skeleton-content">
+          <div class="pg-skeleton-line long"></div>
+          <div class="pg-skeleton-line short"></div>
+          <div class="pg-skeleton-line medium"></div>
+          <div class="pg-skeleton-button"></div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <div
+      class="pg-no-results"
+      id="pgNoResults"
+      style="display:none;"
+    >
+
+      <p>
+        No gifts found matching your criteria.
+      </p>
+
+      <button
+        class="pg-clear-btn"
+        id="pgClearBtn"
+        type="button"
+      >
+        Clear Filters
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div
+    id="pgLoadingState"
+    class="pg-loading"
+    style="display:none;"
+  >
+    Loading gifts...
+  </div>
+
+
+  <div
+    id="pgErrorState"
+    class="pg-error"
+    style="display:none;"
+  >
+    Well, that was unexpected (story of our lives).
+    Please try again later.
+  </div>
+
+</div>
+
+
+<script>
+
+(function() {
+
+  'use strict';
+
+
+  /* =========================================================
+     CONFIGURATION
+     ========================================================= */
+
+  var SHEET_ID =
+    '1xxZ1GKScq9eR2xALbXOGm7TphdM8FFLmVjix_3ZXuUw';
+
+  var SHEET_NAME = 'Sheet1';
+
+
+  /* =========================================================
+     APPLICATION STATE
+     ========================================================= */
+
+  var products = [];
+
+  var categories = [];
+
+  var searchTerm = '';
+
+  var selectedCategory = '';
+
+  var sortBy = 'featured';
+
+  var favorites = new Set();
+
+  var showFavoritesOnly = false;
+
+  var dataLoaded = false;
+
+  var STAR_CHAR = String.fromCharCode(9733);
+
+
+  /* =========================================================
+     SKELETON / LOADING STATE
+     ========================================================= */
+
+  function showSkeletons() {
+
+    var grid =
+      document.getElementById('pgProductsGrid');
+
+    if (!grid) {
+      return;
     }
 
-    async init() {
-        try {
-            this.showLoading();
-            await this.loadProducts();
-            this.setupEventListeners();
-            this.renderTabs();
-            this.renderProducts(); // Initial render of products
-            
-            // Allow some time for images to load and layout to settle
-            setTimeout(() => {
-                this.sendIframeHeight(); // Initial height send after content is rendered and a short delay
-                this.setupObservers(); // Setup observers after initial render and height send
-            }, 500); // 500ms delay to allow render and image loading
-            
-        } catch (error) {
-            console.error('Error loading products:', error);
-            this.showError(`Failed to load products: ${error.message}`);
-            this.sendIframeHeight(); // Send height even on error to adjust iframe to error message
+    /*
+      Skeletons are already in the HTML.
+      This function exists so the loading state can
+      be restored if needed.
+    */
+
+  }
+
+
+  /* =========================================================
+     LOAD GOOGLE SHEET
+     ========================================================= */
+
+  function loadProductsFromSheet() {
+
+    var csvUrl =
+      'https://docs.google.com/spreadsheets/d/' +
+      SHEET_ID +
+      '/export?format=csv&gid=0';
+
+
+    /*
+      IMPORTANT:
+      The page is already visible at this point.
+
+      We do NOT hide pgMainContent while the
+      Google Sheet is loading.
+    */
+
+    fetch(csvUrl)
+
+      .then(function(response) {
+
+        if (!response.ok) {
+
+          throw new Error(
+            'Failed to fetch: ' + response.status
+          );
+
         }
-    }
 
-    // Function to send iframe height to parent
-    sendIframeHeight() {
-        if (this.mainContentContainer) {
-            // Calculate scroll height, adding a small buffer for margin/padding
-            // Use scrollHeight which accounts for content that might be outside the viewport
-            const height = this.mainContentContainer.scrollHeight + 40; 
-            
-            // Log the height we are sending for debugging
-            console.log('GitHub Page: Sending iframe height:', height);
+        return response.text();
 
-            // IMPORTANT: The targetOrigin MUST be your Pixpa domain
-            window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
-        } else {
-            console.error('GitHub Page: gifts-for-menopauseContainer not found for height calculation.');
-        }
-    }
+      })
 
-    // Function to set up all relevant observers
-    setupObservers() {
-        if (this.mainContentContainer) {
-            // ResizeObserver for changes in element dimensions
-            if (!this.resizeObserver) {
-                this.resizeObserver = new ResizeObserver(entries => {
-                    console.log('GitHub Page: ResizeObserver detected change, requesting new height.');
-                    // Debounce sending height to avoid excessive messages during rapid resizing
-                    this.debounce(this.sendIframeHeight.bind(this), 100)(); 
-                });
-                this.resizeObserver.observe(this.mainContentContainer);
-            }
+      .then(function(csvText) {
 
-            // MutationObserver for changes in DOM structure (e.g., adding/removing product cards)
-            if (!this.mutationObserver) {
-                this.mutationObserver = new MutationObserver(mutations => {
-                    let layoutChanged = false;
-                    for (let mutation of mutations) {
-                        if (mutation.type === 'childList' || 
-                            (mutation.type === 'attributes' && mutation.attributeName === 'style')) {
-                            layoutChanged = true;
-                            break;
-                        }
-                    }
-                    if (layoutChanged) {
-                        console.log('GitHub Page: MutationObserver detected DOM change, requesting new height.');
-                        this.debounce(this.sendIframeHeight.bind(this), 100)();
-                    }
-                });
-                // Observe changes to child elements and their attributes within gifts-for-menopauseContainer
-                this.mutationObserver.observe(this.mainContentContainer, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
-            }
-        }
-    }
+        parseCSVData(csvText);
 
-    async loadProducts() {
-        try {
-            console.log('Fetching data from:', this.csvUrl);
-            const response = await fetch(this.csvUrl);
+        dataLoaded = true;
+
+        init();
+
+      })
+
+      .catch(function(error) {
+
+        console.error(
+          'CSV loading failed:',
+          error
+        );
+
+
+        /*
+          Fallback to Google Visualization JSON.
+        */
+
+        var jsonUrl =
+          'https://docs.google.com/spreadsheets/d/' +
+          SHEET_ID +
+          '/gviz/tq?tqx=out:json&sheet=' +
+          encodeURIComponent(SHEET_NAME);
+
+
+        fetch(jsonUrl)
+
+          .then(function(response) {
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+
+              throw new Error(
+                'JSON request failed: ' +
+                response.status
+              );
+
             }
 
-            const csvText = await response.text();
-            console.log('CSV data received, length:', csvText.length);
+            return response.text();
 
-            const data = Papa.parse(csvText, {
-                header: true,
-                skipEmptyLines: true,
-                transformHeader: (header) => header.trim().toLowerCase()
-            });
+          })
 
-            console.log('Parsed data:', data);
+          .then(function(text) {
 
-            if (data.errors && data.errors.length > 0) {
-                console.error('Parse errors:', data.errors);
-            }
+            var json =
+              text.substr(47).slice(0, -2);
 
-            // Use a Map to store unique products by productName to prevent duplicates
-            const uniqueProductsMap = new Map();
-            data.data.filter(product => product.productname && product.productname.trim()).forEach(product => {
-                const processedProduct = {
-                    ...product,
-                    approxprice: parseFloat(product.approxprice) || 0,
-                    ratings: parseFloat(product.ratings) || 0,
-                    badge: product.badge || '',
-                    featured: product.featured || 'no'
-                };
-                // Use productname as the key to ensure uniqueness
-                uniqueProductsMap.set(processedProduct.productname, processedProduct);
-            });
+            var data =
+              JSON.parse(json);
 
-            this.products = Array.from(uniqueProductsMap.values());
+            parseSheetData(data);
 
-            console.log('Processed unique products:', this.products.length);
+            dataLoaded = true;
 
-            if (this.products.length === 0) {
-                throw new Error('No valid products found in the data');
-            }
+            init();
 
-            this.products.forEach(p => {
-                if (p.category) {
-                    this.categories.add(p.category);
-                }
-            });
+          })
 
-            this.filteredProducts = [...this.products];
-            console.log('Categories found:', Array.from(this.categories));
-        } catch (error) {
-            console.error('Error in loadProducts:', error);
-            throw error;
-        }
-    }
+          .catch(function(error2) {
 
-    setupEventListeners() {
-        const searchInput = document.getElementById('searchInput');
-        const clearSearch = document.getElementById('clearSearch');
-        const sortSelect = document.getElementById('sortPrice');
-        const favoritesToggle = document.getElementById('favoritesToggle');
-
-        searchInput.addEventListener('input', this.debounce(() => this.handleSearch(), 300));
-        clearSearch.addEventListener('click', () => this.clearSearch());
-        sortSelect.addEventListener('change', () => this.handleSort());
-        favoritesToggle.addEventListener('click', () => this.toggleFavorites());
-
-        // Header visibility on scroll
-        window.addEventListener('scroll', () => this.handleHeaderScroll());
-    }
-
-    debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    handleHeaderScroll() {
-        // Only hide header on desktop
-        if (window.innerWidth >= 769) {
-            const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-            if (scrollPosition > this.firstRowThreshold) {
-                this.header.classList.add('hidden');
-            } else {
-                this.header.classList.remove('hidden');
-            }
-        } else {
-            // Ensure header is always visible on mobile
-            this.header.classList.remove('hidden');
-        }
-    }
-
-    handleSearch() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const clearSearchBtn = document.getElementById('clearSearch');
-
-        if (searchTerm.trim() === '') {
-            this.isSearching = false;
-            clearSearchBtn.style.display = 'none';
-            this.applyFilters();
-        } else {
-            this.isSearching = true;
-            clearSearchBtn.style.display = 'inline-block';
-            this.clearActiveTab();
-            this.applyFilters(searchTerm);
-        }
-    }
-
-    clearSearch() {
-        document.getElementById('searchInput').value = '';
-        document.getElementById('clearSearch').style.display = 'none';
-        this.isSearching = false;
-        this.applyFilters();
-    }
-
-    clearActiveTab() {
-        // Clear all active tabs
-        document.querySelectorAll('#categoryTabs button').forEach(btn => {
-            btn.classList.remove('active');
-            btn.setAttribute('aria-selected', 'false');
-        });
-
-        // Reset dropdown to default
-        const dropdown = document.getElementById('categoryDropdown');
-        dropdown.value = 'default';
-
-        // Reset current category
-        this.currentCategory = 'default';
-    }
-
-    handleSort() {
-        const sortValue = document.getElementById('sortPrice').value;
-        this.applySort(sortValue);
-    }
-
-    toggleFavorites() {
-        this.showingFavorites = !this.showingFavorites;
-        const toggle = document.getElementById('favoritesToggle');
-        const categoryDropdown = document.getElementById('categoryDropdown');
-        const categoryButtons = document.querySelectorAll('#categoryTabs button');
-
-        if (this.showingFavorites) {
-            toggle.textContent = 'Back to Products';
-            toggle.classList.add('active');
-            document.getElementById('searchInput').value = '';
-            this.isSearching = false; // Ensure search is off when showing favorites
-            this.currentCategory = 'default';
-            if (categoryDropdown) {
-                categoryDropdown.value = 'default';
-                categoryDropdown.disabled = true;
-            }
-            categoryButtons.forEach(btn => btn.disabled = true);
-            this.clearSearch(); // Clear search input and hide button
-            this.clearActiveTab(); // Clear active category tab
-        } else {
-            toggle.textContent = 'Show My Favorites';
-            toggle.classList.remove('active');
-            document.getElementById('searchInput').value = '';
-            if (categoryDropdown) {
-                categoryDropdown.disabled = false;
-            }
-            categoryButtons.forEach(btn => btn.disabled = false);
-        }
-
-        this.applyFilters();
-    }
-
-    applyFilters(searchTerm = '') {
-        let filtered = [...this.products];
-
-        if (searchTerm) {
-            // When searching, ignore category filters and search all products
-            filtered = filtered.filter(p =>
-                p.productname.toLowerCase().includes(searchTerm) ||
-                (p.category && p.category.toLowerCase().includes(searchTerm))
+            console.error(
+              'Both methods failed:',
+              error,
+              error2
             );
-            // Remove duplicates from search results based on productname
-            const seenProductNames = new Set();
-            filtered = filtered.filter(product => {
-                const isDuplicate = seenProductNames.has(product.productname);
-                seenProductNames.add(product.productname);
-                return !isDuplicate;
-            });
-        } else {
-            // Only apply category filter when not searching
-            if (this.currentCategory !== 'default' && !this.isSearching) {
-                filtered = filtered.filter(p => p.category === this.currentCategory);
+
+
+            var grid =
+              document.getElementById(
+                'pgProductsGrid'
+              );
+
+            if (grid) {
+              grid.innerHTML = '';
             }
+
+
+            var errorDiv =
+              document.getElementById(
+                'pgErrorState'
+              );
+
+            errorDiv.textContent =
+              'Error loading gifts. Please ensure the Google Sheet is published to the web.';
+
+            errorDiv.style.display = 'block';
+
+          });
+
+      });
+
+  }
+
+
+  /* =========================================================
+     CSV PARSER
+     ========================================================= */
+
+  function parseCSVData(csvText) {
+
+    var lines =
+      csvText.split('\n');
+
+
+    if (lines.length < 2) {
+
+      throw new Error(
+        'Sheet appears to be empty'
+      );
+
+    }
+
+
+    var headers =
+      parseCSVLine(lines[0]);
+
+
+    var colIndices = {
+
+      name: -1,
+
+      price: -1,
+
+      rating: -1,
+
+      category: -1,
+
+      image: -1,
+
+      url: -1,
+
+      description: -1
+
+    };
+
+
+    for (
+      var i = 0;
+      i < headers.length;
+      i++
+    ) {
+
+      var header =
+        headers[i]
+          .toLowerCase()
+          .trim();
+
+
+      if (
+        header.indexOf('name') !== -1 ||
+        header === 'product'
+      ) {
+
+        colIndices.name = i;
+
+      }
+
+      else if (
+        header.indexOf('price') !== -1
+      ) {
+
+        colIndices.price = i;
+
+      }
+
+      else if (
+        header.indexOf('rating') !== -1 ||
+        header.indexOf('star') !== -1
+      ) {
+
+        colIndices.rating = i;
+
+      }
+
+      else if (
+        header.indexOf('category') !== -1 ||
+        header.indexOf('symptom') !== -1
+      ) {
+
+        colIndices.category = i;
+
+      }
+
+      else if (
+        header.indexOf('image') !== -1 ||
+        header.indexOf('img') !== -1 ||
+        header.indexOf('picture') !== -1
+      ) {
+
+        colIndices.image = i;
+
+      }
+
+      else if (
+        header.indexOf('url') !== -1 ||
+        header.indexOf('link') !== -1
+      ) {
+
+        colIndices.url = i;
+
+      }
+
+      else if (
+        header.indexOf('description') !== -1 ||
+        header.indexOf('desc') !== -1
+      ) {
+
+        colIndices.description = i;
+
+      }
+
+    }
+
+
+    /*
+      Description fallback.
+    */
+
+    /* Gifts sheet has no description column.
+       Leave description unset so cards fall back to category. */
+
+
+
+    var categorySet = new Set();
+
+
+    for (
+      var j = 1;
+      j < lines.length;
+      j++
+    ) {
+
+      var line =
+        lines[j].trim();
+
+
+      if (!line) {
+        continue;
+      }
+
+
+      var values =
+        parseCSVLine(line);
+
+
+      var name =
+        values[colIndices.name]
+          ? values[colIndices.name].trim()
+          : '';
+
+
+      if (!name) {
+        continue;
+      }
+
+
+      var product = {
+
+        id: j,
+
+        name: name,
+
+        price:
+          parseFloat(
+            values[colIndices.price]
+          ) || 0,
+
+        rating:
+          parseFloat(
+            values[colIndices.rating]
+          ) || 4.0,
+
+        category:
+          values[colIndices.category]
+            ? values[colIndices.category].trim()
+            : 'Uncategorized',
+
+        image:
+          values[colIndices.image]
+            ? values[colIndices.image].trim()
+            : '',
+
+        url:
+          values[colIndices.url]
+            ? values[colIndices.url].trim()
+            : '#',
+
+        description:
+          values[colIndices.description]
+            ? values[colIndices.description].trim()
+            : ''
+
+      };
+
+
+      products.push(product);
+
+      categorySet.add(product.category);
+
+    }
+
+
+    categories = [
+      'Beautiful Things',
+      'Make Her Smile',
+      'Mindfulness',
+      'Mood Booster',
+      'On The Go Essentials',
+      'Pamper & Unwind',
+      'Sending Hugs',
+      'Sleep Well',
+      'Stay Cool',
+      'Stress Relief',
+      'Thoughtful Gifts'
+    ];
+
+  }
+
+
+  /* =========================================================
+     CSV LINE PARSER
+     ========================================================= */
+
+  function parseCSVLine(line) {
+
+    var result = [];
+
+    var current = '';
+
+    var inQuotes = false;
+
+
+    for (
+      var i = 0;
+      i < line.length;
+      i++
+    ) {
+
+      var char = line[i];
+
+
+      if (char === '"') {
+
+        if (
+          inQuotes &&
+          line[i + 1] === '"'
+        ) {
+
+          current += '"';
+
+          i++;
+
         }
 
-        if (this.showingFavorites) {
-            filtered = filtered.filter(p => this.favorites.has(p.productname));
-            // Remove duplicates from favorites if any (e.g., if a product was favorited and duplicated in source)
-            const seenProductNamesFavorites = new Set();
-            filtered = filtered.filter(product => {
-                const isDuplicate = seenProductNamesFavorites.has(product.productname);
-                seenProductNamesFavorites.add(product.productname);
-                return !isDuplicate;
-            });
+        else {
+
+          inQuotes = !inQuotes;
+
         }
 
-        this.filteredProducts = filtered;
-        this.applySort(document.getElementById('sortPrice').value);
+      }
+
+      else if (
+        char === ',' &&
+        !inQuotes
+      ) {
+
+        result.push(current);
+
+        current = '';
+
+      }
+
+      else {
+
+        current += char;
+
+      }
+
     }
 
-    applySort(sortValue) {
-        switch (sortValue) {
-            case 'featured':
-                this.filteredProducts.sort((a, b) => {
-                    // First, sort by featured status (yes comes before no)
-                    const aFeatured = a.featured && a.featured.toLowerCase() === 'yes';
-                    const bFeatured = b.featured && b.featured.toLowerCase() === 'yes';
 
-                    if (aFeatured !== bFeatured) {
-                        return bFeatured ? -1 : 1; // Corrected order: featured (yes) comes before not featured (no)
-                    }
+    result.push(current);
 
-                    // If both have same featured status, sort by badge presence
-                    const aBadge = a.badge && a.badge.trim() !== '';
-                    const bBadge = b.badge && b.badge.trim() !== '';
+    return result;
 
-                    if (aBadge !== bBadge) {
-                        return bBadge ? -1 : 1; // Corrected order: badge comes before no badge
-                    }
+  }
 
-                    // Finally, sort alphabetically
-                    return a.productname.localeCompare(b.productname);
-                });
-                break;
-            case 'low':
-                this.filteredProducts.sort((a, b) => a.approxprice - b.approxprice);
-                break;
-            case 'high':
-                this.filteredProducts.sort((a, b) => b.approxprice - a.approxprice);
-                break;
-            default:
-                this.filteredProducts.sort((a, b) => a.productname.localeCompare(b.productname));
+
+  /* =========================================================
+     GOOGLE SHEETS JSON FALLBACK
+     ========================================================= */
+
+  function parseSheetData(data) {
+
+    var rows =
+      data.table.rows;
+
+    var headers = [];
+
+
+    if (
+      rows.length > 0 &&
+      rows[0].c
+    ) {
+
+      for (
+        var i = 0;
+        i < rows[0].c.length;
+        i++
+      ) {
+
+        var cell =
+          rows[0].c[i];
+
+        headers.push(
+          cell && cell.v
+            ? cell.v.toString().trim()
+            : ''
+        );
+
+      }
+
+    }
+
+
+    var colIndices = {
+
+      name: -1,
+
+      price: -1,
+
+      rating: -1,
+
+      category: -1,
+
+      image: -1,
+
+      url: -1,
+
+      description: -1
+
+    };
+
+
+    for (
+      var j = 0;
+      j < headers.length;
+      j++
+    ) {
+
+      var header =
+        headers[j].toLowerCase();
+
+
+      if (
+        header.indexOf('name') !== -1 ||
+        header === 'product'
+      ) {
+
+        colIndices.name = j;
+
+      }
+
+      else if (
+        header.indexOf('price') !== -1
+      ) {
+
+        colIndices.price = j;
+
+      }
+
+      else if (
+        header.indexOf('rating') !== -1 ||
+        header.indexOf('star') !== -1
+      ) {
+
+        colIndices.rating = j;
+
+      }
+
+      else if (
+        header.indexOf('category') !== -1 ||
+        header.indexOf('symptom') !== -1
+      ) {
+
+        colIndices.category = j;
+
+      }
+
+      else if (
+        header.indexOf('image') !== -1 ||
+        header.indexOf('img') !== -1
+      ) {
+
+        colIndices.image = j;
+
+      }
+
+      else if (
+        header.indexOf('url') !== -1 ||
+        header.indexOf('link') !== -1
+      ) {
+
+        colIndices.url = j;
+
+      }
+
+      else if (
+        header.indexOf('description') !== -1 ||
+        header.indexOf('desc') !== -1
+      ) {
+
+        colIndices.description = j;
+
+      }
+
+    }
+
+
+    /* Gifts sheet has no description column.
+       Leave description unset so cards fall back to category. */
+
+
+
+    var categorySet = new Set();
+
+
+    for (
+      var k = 1;
+      k < rows.length;
+      k++
+    ) {
+
+      var row = rows[k];
+
+
+      if (!row.c) {
+        continue;
+      }
+
+
+      var product = {
+
+        id: k,
+
+        name:
+          getCellValue(
+            row.c[colIndices.name]
+          ) || 'Unknown Product',
+
+        price:
+          parseFloat(
+            getCellValue(
+              row.c[colIndices.price]
+            )
+          ) || 0,
+
+        rating:
+          parseFloat(
+            getCellValue(
+              row.c[colIndices.rating]
+            )
+          ) || 4.0,
+
+        category:
+          getCellValue(
+            row.c[colIndices.category]
+          ) || 'Uncategorized',
+
+        image:
+          getCellValue(
+            row.c[colIndices.image]
+          ) || '',
+
+        url:
+          getCellValue(
+            row.c[colIndices.url]
+          ) || '#',
+
+        description:
+          getCellValue(
+            row.c[colIndices.description]
+          ) || ''
+
+      };
+
+
+      if (
+        product.name &&
+        product.name !== 'Unknown Product'
+      ) {
+
+        products.push(product);
+
+        categorySet.add(
+          product.category
+        );
+
+      }
+
+    }
+
+
+    categories = [
+      'Beautiful Things',
+      'Make Her Smile',
+      'Mindfulness',
+      'Mood Booster',
+      'On The Go Essentials',
+      'Pamper & Unwind',
+      'Sending Hugs',
+      'Sleep Well',
+      'Stay Cool',
+      'Stress Relief',
+      'Thoughtful Gifts'
+    ];
+
+  }
+
+
+  function getCellValue(cell) {
+
+    if (!cell) {
+      return '';
+    }
+
+
+    if (
+      cell.v !== undefined &&
+      cell.v !== null
+    ) {
+
+      return cell.v
+        .toString()
+        .trim();
+
+    }
+
+
+    return '';
+
+  }
+
+
+  /* =========================================================
+     INITIALIZE
+     ========================================================= */
+
+  function init() {
+
+    renderCategoryFilters();
+
+    renderProducts();
+
+    setupEventListeners();
+
+  }
+
+
+  /* =========================================================
+     CATEGORY FILTERS
+     ========================================================= */
+
+  function renderCategoryFilters() {
+
+    var container =
+      document.getElementById(
+        'pgCategoryFilters'
+      );
+
+
+    container.innerHTML = '';
+
+
+    var allBtn =
+      document.createElement('button');
+
+
+    allBtn.className =
+      'pg-category-btn active';
+
+
+    allBtn.textContent =
+      'All Gifts';
+
+
+    allBtn.onclick =
+      function() {
+
+        filterByCategory(
+          '',
+          allBtn
+        );
+
+      };
+
+
+    container.appendChild(allBtn);
+
+
+    for (
+      var i = 0;
+      i < categories.length;
+      i++
+    ) {
+
+      (function(category) {
+
+        var btn =
+          document.createElement('button');
+
+
+        btn.className =
+          'pg-category-btn';
+
+
+        btn.textContent =
+          category;
+
+
+        btn.onclick =
+          function() {
+
+            filterByCategory(
+              category,
+              btn
+            );
+
+          };
+
+
+        container.appendChild(btn);
+
+      })(categories[i]);
+
+    }
+
+  }
+
+
+  /* =========================================================
+     FILTERING / SORTING
+     ========================================================= */
+
+  function getFilteredProducts() {
+
+    var filtered =
+      products.slice();
+
+
+    if (searchTerm) {
+
+      var term =
+        searchTerm.toLowerCase();
+
+
+      filtered =
+        filtered.filter(
+          function(p) {
+
+            return (
+              p.name
+                .toLowerCase()
+                .indexOf(term) !== -1 ||
+
+              p.description
+                .toLowerCase()
+                .indexOf(term) !== -1 ||
+
+              p.category
+                .toLowerCase()
+                .indexOf(term) !== -1
+            );
+
+          }
+        );
+
+    }
+
+    else if (selectedCategory) {
+
+      filtered =
+        filtered.filter(
+          function(p) {
+
+            return (
+              p.category ===
+              selectedCategory
+            );
+
+          }
+        );
+
+    }
+
+
+    if (showFavoritesOnly) {
+
+      filtered =
+        filtered.filter(
+          function(p) {
+
+            return favorites.has(p.id);
+
+          }
+        );
+
+    }
+
+
+    if (sortBy === 'price-low') {
+
+      filtered.sort(
+        function(a, b) {
+
+          return a.price - b.price;
+
         }
+      );
 
-        this.renderProducts();
-        // The ResizeObserver or MutationObserver will catch this change and send height
     }
 
-    renderTabs() {
-        const tabContainer = document.getElementById('categoryTabs');
-        const categoryDropdown = document.getElementById('categoryDropdown');
+    else if (sortBy === 'price-high') {
 
-        tabContainer.innerHTML = '';
-        categoryDropdown.innerHTML = '<option value="default">Categories</option>';
+      filtered.sort(
+        function(a, b) {
 
-        Array.from(this.categories).sort().forEach(category => {
-            const option = document.createElement('option');
-            option.value = category;
-            option.textContent = category;
-            categoryDropdown.appendChild(option);
-        });
+          return b.price - a.price;
 
-        categoryDropdown.addEventListener('change', (e) => {
-            this.currentCategory = e.target.value;
-            this.applyFilters(document.getElementById('searchInput').value);
-            document.querySelectorAll('#categoryTabs button').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent === e.target.value) {
-                    btn.classList.add('active');
-                }
-            });
-            // The ResizeObserver or MutationObserver will catch this change and send height
-        });
-
-        Array.from(this.categories).sort().forEach(category => {
-            const btn = this.createTabButton(category, this.currentCategory === category);
-            tabContainer.appendChild(btn);
-        });
-    }
-
-    createTabButton(category, isActive) {
-        const btn = document.createElement('button');
-        btn.textContent = category;
-        btn.setAttribute('role', 'tab');
-        btn.setAttribute('aria-selected', isActive);
-
-        if (isActive) {
-            btn.classList.add('active');
         }
+      );
 
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('#categoryTabs button').forEach(b => {
-                b.classList.remove('active');
-                b.setAttribute('aria-selected', 'false');
-            });
-            btn.classList.add('active');
-            btn.setAttribute('aria-selected', 'true');
-
-            this.currentCategory = category;
-            const dropdown = document.getElementById('categoryDropdown');
-            dropdown.value = category;
-            this.applyFilters(document.getElementById('searchInput').value);
-            // The ResizeObserver or MutationObserver will catch this change and send height
-        });
-
-        return btn;
     }
 
-    renderProducts() {
-        const grid = document.getElementById('product-grid');
+    else if (sortBy === 'rating') {
 
-        if (this.filteredProducts.length === 0) {
-            grid.innerHTML = '<div class="no-results">No products found.</div>';
-            return;
+      filtered.sort(
+        function(a, b) {
+
+          return b.rating - a.rating;
+
         }
+      );
 
-        grid.innerHTML = '';
-
-        this.filteredProducts.forEach(product => {
-            const card = this.createProductCard(product);
-            grid.appendChild(card);
-        });
-        // Important: Re-calling sendIframeHeight here for robustness, in case observers miss something
-        // but it's debounced, so it won't be called too frequently.
-        this.debounce(this.sendIframeHeight.bind(this), 50)(); 
     }
 
-    createProductCard(product) {
-        const card = document.createElement('div');
-        card.className = 'product-card';
 
-        const starsHtml = this.generateStarsHtml(product.ratings);
-        const isFavorite = this.favorites.has(product.productname);
-        const hasBadge = product.badge && product.badge.trim() !== '';
+    return filtered;
 
-        card.innerHTML = `
-            ${hasBadge ? `<span class="badge">${product.badge}</span>` : ''}
-            <span class="favorite ${isFavorite ? 'active' : ''}" role="button" aria-label="Toggle favorite">
-                <i class="fa-${isFavorite ? 'solid' : 'regular'} fa-heart"></i>
-            </span>
-            <img src="${product.imageurl}" alt="${product.productname}" loading="lazy" />
-            <h3>${product.productname}</h3>
-            <div class="stars" aria-label="Rating: ${product.ratings} out of 5 stars">${starsHtml}</div>
-            <p class="price">$${product.approxprice.toFixed(2)}</p>
-            <a href="${product.amazonlink}" target="_blank" rel="noopener noreferrer">Shop Now</a>
-        `;
+  }
 
-        card.querySelector('.favorite').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.toggleFavorite(product.productname, e.currentTarget);
-        });
 
-        return card;
+  /* =========================================================
+     STARS
+     ========================================================= */
+
+  function buildStarsElement(rating) {
+
+    var container =
+      document.createElement('span');
+
+
+    container.className =
+      'pg-stars';
+
+
+    for (
+      var i = 0;
+      i < 5;
+      i++
+    ) {
+
+      var fillAmount =
+        Math.max(
+          0,
+          Math.min(
+            1,
+            rating - i
+          )
+        );
+
+
+      var fillPercent =
+        Math.round(
+          fillAmount * 100
+        ) + '%';
+
+
+      var starWrap =
+        document.createElement('span');
+
+
+      starWrap.className =
+        'pg-star';
+
+
+      var bg =
+        document.createElement('span');
+
+
+      bg.className =
+        'pg-star-bg';
+
+
+      bg.textContent =
+        STAR_CHAR;
+
+
+      starWrap.appendChild(bg);
+
+
+      var fill =
+        document.createElement('span');
+
+
+      fill.className =
+        'pg-star-fill';
+
+
+      fill.style.width =
+        fillPercent;
+
+
+      fill.textContent =
+        STAR_CHAR;
+
+
+      starWrap.appendChild(fill);
+
+
+      container.appendChild(
+        starWrap
+      );
+
     }
 
-    generateStarsHtml(rating) {
-        const fullStars = Math.floor(rating);
-        const halfStar = rating % 1 >= 0.5;
-        const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
 
-        let starsHtml = '';
-        for (let i = 0; i < fullStars; i++) {
-            starsHtml += '<i class="fa-solid fa-star"></i>';
+    return container;
+
+  }
+
+
+  /* =========================================================
+     CREATE A SINGLE PRODUCT CARD
+     ========================================================= */
+
+  function createProductCard(product) {
+
+    var card =
+      document.createElement('div');
+
+
+    card.className =
+      'pg-product-card';
+
+
+    var imageContainer =
+      document.createElement('div');
+
+
+    imageContainer.className =
+      'pg-product-image-container';
+
+
+    if (product.image) {
+
+      var img =
+        document.createElement('img');
+
+
+      img.className =
+        'pg-product-image';
+
+
+      /*
+        FAST LOADING:
+        Browser does not need to download
+        every product image immediately.
+      */
+
+      img.loading = 'lazy';
+
+      img.decoding = 'async';
+
+      img.src = product.image;
+
+      img.alt = product.name;
+
+
+      img.onerror =
+        function() {
+
+          this.style.display =
+            'none';
+
+        };
+
+
+      imageContainer.appendChild(img);
+
+    }
+
+
+    var favBtn =
+      document.createElement('button');
+
+
+    favBtn.className =
+      'pg-favorite-btn' +
+      (
+        favorites.has(product.id)
+          ? ' favorited'
+          : ''
+      );
+
+
+    favBtn.setAttribute(
+      'data-product-id',
+      product.id
+    );
+
+
+    favBtn.setAttribute(
+      'aria-label',
+      favorites.has(product.id)
+        ? 'Remove from favorites'
+        : 'Add to favorites'
+    );
+
+
+    favBtn.onclick =
+      function() {
+
+        var productId =
+          parseInt(
+            this.getAttribute(
+              'data-product-id'
+            ),
+            10
+          );
+
+
+        toggleFavorite(
+          productId
+        );
+
+      };
+
+
+    var heartSvg =
+      document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'svg'
+      );
+
+
+    heartSvg.setAttribute(
+      'class',
+      'pg-heart-icon'
+    );
+
+
+    heartSvg.setAttribute(
+      'viewBox',
+      '0 0 24 24'
+    );
+
+
+    var heartPath =
+      document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'path'
+      );
+
+
+    heartPath.setAttribute(
+      'd',
+      'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'
+    );
+
+
+    heartSvg.appendChild(
+      heartPath
+    );
+
+
+    favBtn.appendChild(
+      heartSvg
+    );
+
+
+    imageContainer.appendChild(
+      favBtn
+    );
+
+
+    card.appendChild(
+      imageContainer
+    );
+
+
+    var info =
+      document.createElement('div');
+
+
+    info.className =
+      'pg-product-info';
+
+
+    var name =
+      document.createElement('h3');
+
+
+    name.className =
+      'pg-product-name';
+
+
+    name.textContent =
+      product.name;
+
+
+    info.appendChild(name);
+
+
+    var priceRatingRow =
+      document.createElement('div');
+
+
+    priceRatingRow.className =
+      'pg-price-rating-row';
+
+
+    var price =
+      document.createElement('div');
+
+
+    price.className =
+      'pg-product-price';
+
+
+    price.textContent =
+      '$' +
+      product.price.toFixed(2);
+
+
+    priceRatingRow.appendChild(
+      price
+    );
+
+
+    priceRatingRow.appendChild(
+      buildStarsElement(
+        product.rating
+      )
+    );
+
+
+    info.appendChild(
+      priceRatingRow
+    );
+
+
+    var descText =
+      product.description
+        ? product.description
+        : product.category;
+
+
+    var descEl =
+      document.createElement('div');
+
+
+    descEl.className =
+      'pg-product-category';
+
+
+    descEl.textContent =
+      descText;
+
+
+    info.appendChild(
+      descEl
+    );
+
+
+    var link =
+      document.createElement('a');
+
+
+    link.href =
+      product.url;
+
+
+    link.target =
+      '_blank';
+
+
+    link.rel =
+      'noopener noreferrer';
+
+
+    link.className =
+      'pg-shop-btn';
+
+
+    link.textContent =
+      'Shop Now';
+
+
+    info.appendChild(
+      link
+    );
+
+
+    card.appendChild(
+      info
+    );
+
+
+    return card;
+
+  }
+
+
+  /* =========================================================
+     FAST PRODUCT RENDERING
+     ========================================================= */
+
+  function renderProducts() {
+    var filtered = getFilteredProducts();
+    var grid = document.getElementById('pgProductsGrid');
+    var noResults = document.getElementById('pgNoResults');
+
+    if (filtered.length === 0) {
+      grid.innerHTML = ''; // Safe to clear if nothing matches
+      grid.style.display = 'none';
+      noResults.style.display = 'block';
+      return;
+    }
+
+    grid.style.display = 'grid';
+    noResults.style.display = 'none';
+
+    var firstBatchSize = 12;
+    var index = 0;
+
+    // Build the FIRST batch in a fragment BEFORE clearing the grid.
+    // This keeps your skeletons visible until the real cards are 100% ready to drop in.
+    var firstFragment = document.createDocumentFragment();
+    var end = Math.min(firstBatchSize, filtered.length);
+    
+    for (var i = index; i < end; i++) {
+      firstFragment.appendChild(createProductCard(filtered[i]));
+    }
+
+    // NOW clear the skeletons/old cards and drop the new ones in simultaneously
+    grid.innerHTML = '';
+    grid.appendChild(firstFragment);
+    index = end;
+
+    // Render the remainder of the batches using requestAnimationFrame
+    function renderBatch() {
+      if (index >= filtered.length) return;
+
+      var fragment = document.createDocumentFragment();
+      var batchEnd = Math.min(index + 12, filtered.length);
+
+      for (var j = index; j < batchEnd; j++) {
+        fragment.appendChild(createProductCard(filtered[j]));
+      }
+
+      grid.appendChild(fragment);
+      index = batchEnd;
+
+      if (index < filtered.length) {
+        requestAnimationFrame(renderBatch);
+      }
+    }
+
+    if (index < filtered.length) {
+      requestAnimationFrame(renderBatch);
+    }
+  }
+
+
+  /* =========================================================
+     FAVORITES
+     ========================================================= */
+
+  function toggleFavorite(productId) {
+
+    if (
+      favorites.has(productId)
+    ) {
+
+      favorites.delete(
+        productId
+      );
+
+    }
+
+    else {
+
+      favorites.add(
+        productId
+      );
+
+    }
+
+
+    updateFavoritesButton();
+
+    renderProducts();
+
+  }
+
+
+  function updateFavoritesButton() {
+
+    var btn =
+      document.getElementById(
+        'pgFavoritesBtn'
+      );
+
+
+    var count =
+      document.getElementById(
+        'pgFavCount'
+      );
+
+
+    var label =
+      document.getElementById(
+        'pgFavBtnLabel'
+      );
+
+
+    count.textContent =
+      (
+        !showFavoritesOnly &&
+        favorites.size > 0
+      )
+        ? '(' +
+          favorites.size +
+          ')'
+        : '';
+
+
+    btn.className =
+      showFavoritesOnly
+        ? 'pg-favorites-btn active'
+        : 'pg-favorites-btn';
+
+
+    label.textContent =
+      showFavoritesOnly
+        ? 'Back to Products'
+        : 'Show My Favorites';
+
+  }
+
+
+  /* =========================================================
+     CATEGORY FILTER
+     ========================================================= */
+
+  function filterByCategory(
+    category,
+    clickedBtn
+  ) {
+
+    selectedCategory =
+      category;
+
+
+    var buttons =
+      document.querySelectorAll(
+        '.pg-category-btn'
+      );
+
+
+    for (
+      var i = 0;
+      i < buttons.length;
+      i++
+    ) {
+
+      buttons[i]
+        .classList
+        .remove('active');
+
+    }
+
+
+    clickedBtn
+      .classList
+      .add('active');
+
+
+    renderProducts();
+
+  }
+
+
+  /* =========================================================
+     SEARCH CLEAR BUTTON
+     ========================================================= */
+
+  function updateSearchClearVisibility() {
+
+    var clearBtn =
+      document.getElementById(
+        'pgSearchClear'
+      );
+
+
+    clearBtn.style.display =
+      searchTerm
+        ? 'flex'
+        : 'none';
+
+  }
+
+
+  function resetCategoryFilterToAll() {
+
+    selectedCategory = '';
+
+
+    var buttons =
+      document.querySelectorAll(
+        '.pg-category-btn'
+      );
+
+
+    for (
+      var i = 0;
+      i < buttons.length;
+      i++
+    ) {
+
+      if (i === 0) {
+
+        buttons[i]
+          .classList
+          .add('active');
+
+      }
+
+      else {
+
+        buttons[i]
+          .classList
+          .remove('active');
+
+      }
+
+    }
+
+  }
+
+
+  /* =========================================================
+     EVENT LISTENERS
+     ========================================================= */
+
+  function setupEventListeners() {
+
+    var searchInput =
+      document.getElementById(
+        'pgSearchInput'
+      );
+
+
+    searchInput.addEventListener(
+      'input',
+      function(e) {
+
+        searchTerm =
+          e.target.value;
+
+
+        resetCategoryFilterToAll();
+
+        updateSearchClearVisibility();
+
+        renderProducts();
+
+      }
+    );
+
+
+    document
+      .getElementById(
+        'pgSearchClear'
+      )
+      .addEventListener(
+        'click',
+        function() {
+
+          searchTerm = '';
+
+          searchInput.value = '';
+
+          resetCategoryFilterToAll();
+
+          updateSearchClearVisibility();
+
+          renderProducts();
+
         }
-        if (halfStar) {
-            starsHtml += '<i class="fa-solid fa-star-half-stroke"></i>';
+      );
+
+
+    document
+      .getElementById(
+        'pgSortSelect'
+      )
+      .addEventListener(
+        'change',
+        function(e) {
+
+          sortBy =
+            e.target.value;
+
+          renderProducts();
+
         }
-        for (let i = 0; i < emptyStars; i++) {
-            starsHtml += '<i class="fa-regular fa-star"></i>';
+      );
+
+
+    document
+      .getElementById(
+        'pgFavoritesBtn'
+      )
+      .addEventListener(
+        'click',
+        function() {
+
+          showFavoritesOnly =
+            !showFavoritesOnly;
+
+
+          if (
+            showFavoritesOnly
+          ) {
+
+            searchTerm = '';
+
+            searchInput.value = '';
+
+            updateSearchClearVisibility();
+
+            resetCategoryFilterToAll();
+
+          }
+
+
+          updateFavoritesButton();
+
+          renderProducts();
+
         }
+      );
 
-        return starsHtml;
-    }
 
-    toggleFavorite(productName, element) {
-        const icon = element.querySelector('i');
+    document
+      .getElementById(
+        'pgClearBtn'
+      )
+      .addEventListener(
+        'click',
+        function() {
 
-        if (this.favorites.has(productName)) {
-            this.favorites.delete(productName);
-            icon.classList.remove('fa-solid');
-            icon.classList.add('fa-regular');
-            element.classList.remove('active');
-        } else {
-            this.favorites.add(productName);
-            icon.classList.remove('fa-regular');
-            icon.classList.add('fa-solid');
-            element.classList.add('active');
+          searchTerm = '';
+
+          showFavoritesOnly = false;
+
+          searchInput.value = '';
+
+          document
+            .getElementById(
+              'pgSortSelect'
+            )
+            .value = 'featured';
+
+
+          updateSearchClearVisibility();
+
+          resetCategoryFilterToAll();
+
+          updateFavoritesButton();
+
+          renderProducts();
+
         }
+      );
 
-        localStorage.setItem('favorites', JSON.stringify([...this.favorites]));
+  }
 
-        // Re-render products if showing favorites and an item is unfavorited
-        if (this.showingFavorites && !this.favorites.has(productName)) {
-            this.applyFilters(document.getElementById('searchInput').value);
-        }
-        // The ResizeObserver or MutationObserver will catch this change and send height
-    }
 
-    showLoading() {
-        document.getElementById('product-grid').innerHTML = '<div class="loading">Loading products...</div>';
-        this.debounce(this.sendIframeHeight.bind(this), 50)(); // Debounced send height when loading
-    }
+  /* =========================================================
+     START
+     ========================================================= */
 
-    showError(message) {
-        document.getElementById('product-grid').innerHTML = `<div class="error">${message}<br><br>Check the browser console for more details.</div>`;
-        this.debounce(this.sendIframeHeight.bind(this), 50)(); // Debounced send height when error
-    }
-}
+  /*
+    The interface is already visible.
 
-// Ensure the ProductGrid is initialized after the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-    new ProductGrid();
-});
+    Skeleton cards are already visible.
 
-// Fallback for image loading and other asynchronous content
-// This will trigger a height update once all resources are loaded
-window.addEventListener('load', () => {
-    console.log('GitHub Page: window loaded, sending final height after all resources.');
-    // Get the instance of ProductGrid and call sendIframeHeight
-    // This assumes ProductGrid has been initialized on DOMContentLoaded
-    const productGridInstance = window.productGrid; // We will make it globally accessible for this.
-    if (productGridInstance) {
-        productGridInstance.sendIframeHeight();
-    }
-});
+    The Google Sheet now loads in the background.
+  */
+
+  showSkeletons();
+
+  loadProductsFromSheet();
+
+
+})();
+
 </script>
-
-</body>
-</html>
-
-
 
