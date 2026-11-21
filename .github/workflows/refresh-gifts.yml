@@ -102,7 +102,7 @@ jobs:
 
           with open("gifts.json", "w", encoding="utf-8") as output:
               json.dump(gifts, output, ensure_ascii=False, indent=2)
-              output.write("\\n")
+              output.write("\n")
 
           print(f"Exported {len(gifts)} gifts to gifts.json")
           PY
