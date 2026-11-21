@@ -75,7 +75,7 @@ jobs:
               return (row.get(column) or "").strip()
 
           def number(raw, default):
-              cleaned = re.sub(r"[^0-9.\\-]", "", raw or "")
+              cleaned = re.sub(r"[^0-9.-]", "", raw or "")
               try:
                   return float(cleaned) if cleaned else default
               except ValueError:
